@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>维修管理</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/4.7.0/css/font-awesome.css">
+    <link rel="stylesheet" href="CSS/main.css">
+    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/popper.js/1.12.5/umd/popper.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div class="jumbotron">
+    <div class="container">
+        <button type="button" class="btn btn-outline-secondary btn-sm" style="margin-bottom: 20px;" data-toggle="modal" data-target="#modelRepair_unit" onclick="modal_clear()">增添维修单位信息</button>
+        <div class="input-group mb-3">
+            <label for="search_input"></label>
+            <input id="search_input" type="text" class="form-control" placeholder="输入车辆编号">
+            <div class="input-group-append">
+                <i class="fa fa-search" onclick="search()"></i>
+            </div>
+        </div>
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th>单位名称</th>
+                <th>电话</th>
+                <th>地址</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody id="Repair_unit_tbody"></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="modelRepair_unit">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">维修单位信息</h6>
+                <a id="modelRepair_unitClose" class="close" data-dismiss="modal">&times;</a>
+            </div>
+            <div class="modal-body">
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" >单位名称</span>
+                    </div>
+                    <input list="datalist_ln" class="form-control" type="text" id="ipt_name">
+                    <datalist id="datalist_ln"></datalist>
+                </div>
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" >电话</span>
+                    </div>
+                    <input list="datalist_car"  class="form-control" type="text" id="ipt_tel">
+                    <datalist id="datalist_car"></datalist>
+                </div>
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" >地址</span>
+                    </div>
+                    <input class="form-control" type="text" id="ipt_add" >
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="post" type="button" class="btn btn-secondary btn-sm" onclick="">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script type="text/javascript">
+    var old_name;
+    $(document).ready(function () {
+        get_repair_unit();
+    });
+
+    function get_repair_unit() {
+        $.ajax({
+            type:"POST",
+            url:"../repair_unitServlet.do",
+            data:{
+                action:'get_repair_unit'
+            },
+            dataType:'json',
+            success:function (jsonObj) {
+                add_repair_unit_tbody(jsonObj);
+            }
+        });
+    }
+
+    function add_repair_unit_tbody(jsonObj) {
+        var data = eval(jsonObj);
+        for(var key in data){ //第一层循环取到各个list
+            var List = data[key];
+            for(var repair_unit in List){ //第二层循环取list中的对象
+                $('#Repair_unit_tbody').append(
+                    '   <tr>\n' +
+                    '                <td>'+List[repair_unit].reuname+'</td>\n' +
+                    '                <td>'+List[repair_unit].reutel+'</td>\n' +
+                    '                <td>'+List[repair_unit].reuaddress+'</td>\n' +
+                    '                <td>' +
+                    '                   <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="modal" data-target="#modelRepair_unit" onclick="modal_add(this)">修改</button>' +
+                    '                   <button type="button" class="btn btn-outline-secondary btn-sm"  onclick="delete_repair_unit(this)">删除</button>\n' +
+                    '               </td>\n' +
+                    '    </tr>'
+                );
+            }
+        }
+    }
+
+    function modal_add(event) {
+        get_name(event);
+        var repair_unit_infor = $(event).parent().parent();
+        for (var i=0;i<3;i++){
+            $('#modelRepair_unit .modal-body input:eq('+i+')').val(repair_unit_infor.children().eq(i).text());
+        }
+        $('#post').attr('onclick','post_change(1)')
+    }
+
+    function modal_clear() {
+        for (var i=0;i<3;i++){
+            $('#modelRepair_unit .modal-body input:eq('+i+')').val('');
+        }
+        $('#post').attr('onclick','post_change(2)')
+    }
+
+    function delete_repair_unit(event) {
+        if (confirm("确定删除这条信息吗")) {
+            $.ajax({
+                url: "../repair_unitServlet.do",
+                data: {
+                    action: 'delete_repair_unit',
+                    reuname: $(event).parent().parent().children().eq(0).text()
+                },
+                type: "POST",
+                dataType: "json",
+                success: function (jsonObj) {
+                    if (jsonObj === true) {
+                        $(event).parent().parent().remove();
+                    } else {
+                        alert('信息删除失败')
+                    }
+                }
+            });
+        }
+    }
+
+    function get_name(event) {
+        old_name = $(event).parent().parent().children().eq(0).text();
+    }
+
+    function post_change(type) {
+        var data;
+        if (type===1){ //修改信息操作
+            data = {
+                action:'change_repair_unit',
+                reuname:$('#ipt_name').val(),
+                reutel:$('#ipt_tel').val(),
+                reuaddress:$('#ipt_add').val(),
+                oldname:old_name
+            };
+            $.ajax({
+                type:"POST",
+                url:"../repair_unitServlet.do",
+                data:data,
+                dataType:'json',
+                success:function (jsonObj) {
+                    if (jsonObj===true){
+                        var reuname = $("td:contains('"+old_name+"')");
+                        reuname.text($('#ipt_name').val());
+                        reuname.next().text($('#ipt_tel').val());
+                        reuname.next().next().text($('#ipt_add').val());
+                        $('#modelRepair_unitClose').click();
+                    }else {
+                        alert('信息修改失败')
+                    }
+                }
+            });
+        }else if (type===2){ //增添信息操作
+            data = {
+                action:'add_repair_unit',
+                reuname:$('#ipt_name').val(),
+                reutel:$('#ipt_tel').val(),
+                reuaddress:$('#ipt_add').val()
+            };
+            $.ajax({
+                type:"POST",
+                url:"../repair_unitServlet.do",
+                data:data,
+                dataType:'json',
+                success:function (jsonObj) {
+                    if (jsonObj!==0){
+                        $('#Repair_unit_tbody').prepend(
+                            '   <tr>\n' +
+                            '                <td>'+$('#ipt_name').val()+'</td>\n' +
+                            '                <td>'+$('#ipt_tel').val()+'</td>\n' +
+                            '                <td>'+$('#ipt_add').val()+'</td>\n' +
+                            '                <td>' +
+                            '                   <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="modal" data-target="#modelRepair_unit" onclick="modal_add(this)">修改</button>' +
+                            '                   <button type="button" class="btn btn-outline-secondary btn-sm"  onclick="delete_repair_unit(this)">删除</button>\n' +
+                            '               </td>\n' +
+                            '    </tr>'
+                        );
+                        $('#modelRepair_unitClose').click();
+                    }else {
+                        alert('信息添加失败')
+                    }
+                }
+            });
+        }
+    }
+
+    function search() {
+        var search_input =  $('#search_input').val();
+        if (search_input==='')  return;
+        $.ajax({
+            url: "../repair_unitServlet.do",
+            data: {
+                action: 'search_repair_unit',
+                reuname: search_input
+            },
+            type: "POST",
+            dataType: "json",
+            success: function (jsonObj) {
+                $('#Repair_unit_tbody').empty();
+                add_repair_unit_tbody(jsonObj);
+            }
+        });
+    }
+</script>
+</html>

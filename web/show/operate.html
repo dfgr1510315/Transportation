@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>运营管理</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/4.7.0/css/font-awesome.css">
+    <link rel="stylesheet" href="CSS/main.css">
+    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/popper.js/1.12.5/umd/popper.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div class="jumbotron">
+    <div class="container">
+        <button type="button" class="btn btn-outline-secondary btn-sm" style="margin-bottom: 20px;" data-toggle="modal" data-target="#modelOperate" onclick="modal_clear()">增添运营信息</button>
+        <div class="input-group mb-3">
+            <label for="search_input"></label>
+            <input id="search_input" type="text" class="form-control" placeholder="输入车辆编号">
+            <div class="input-group-append">
+                <i class="fa fa-search" onclick="search()"></i>
+            </div>
+        </div>
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th>司机执照编号</th>
+                <th>车辆编号</th>
+                <th>运输货物</th>
+                <th>目的地</th>
+                <th>起始日期</th>
+                <th>送达日期</th>
+                <th>运输时间(h)</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody id="operate_tbody"></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="modelOperate">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">运输信息</h6>
+                <a id="modelOperateClose" class="close" data-dismiss="modal">&times;</a>
+            </div>
+            <div class="modal-body">
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" >司机执照编号</span>
+                    </div>
+                    <input list="datalist_ln" class="form-control" type="text" id="ipt_ln">
+                    <datalist id="datalist_ln"></datalist>
+                </div>
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" >车辆编号</span>
+                    </div>
+                    <input list="datalist_car"  class="form-control" type="text" id="ipt_car">
+                    <datalist id="datalist_car"></datalist>
+                </div>
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" >运输货物</span>
+                    </div>
+                    <input class="form-control" type="text" id="ipt_goods" >
+                </div>
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">目的地</span>
+                    </div>
+                    <input class="form-control" type="text"  id="ipt_destination">
+                </div>
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">起始时间</span>
+                    </div>
+                    <input class="form-control" type="date"  id="ipt_stime">
+                </div>
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">到达时间</span>
+                    </div>
+                    <input class="form-control" type="date"  id="ipt_rtime">
+                </div>
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">运输时间(h)</span>
+                    </div>
+                    <input class="form-control" type="number" step="0.1" id="ipt_time">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="post" type="button" class="btn btn-secondary btn-sm" onclick="">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script type="text/javascript">
+    var flag = 0;
+    var old_no;
+    $(document).ready(function () {
+        get_operate();
+    });
+    function get_operate() {
+        $.ajax({
+            type:"POST",
+            url:"../OperateServlet.do",
+            data:{
+                action:'get_operate'
+            },
+            dataType:'json',
+            success:function (jsonObj) {
+                add_operate_tbody(jsonObj);
+            }
+        });
+    }
+
+/*    function toDate(obj) {
+        var date = new Date();
+        date.setTime(obj.time);
+        date.setHours(obj.hours-8);
+        date.setMinutes(obj.minutes);
+        date.setSeconds(obj.seconds);
+        return date.format("yyyy-MM-dd hh:mm:ss"); //调用Date.prototype.format方法
+    }*/
+
+    function modal_add(event) {
+        getListId();
+        get_old_id(event);
+        var operate_infor = $(event).parent().parent();
+        for (var i=0;i<7;i++){
+            $('#modelOperate .modal-body input:eq('+i+')').val(operate_infor.children().eq(i).text());
+        }
+ /*       var now = new Date();
+        //alert(now.getDate()+'-'+now.getMonth());
+//格式化日，如果小于9，前面补0
+        var day = ("0" + now.getDate()).slice(-2);
+//格式化月，如果小于9，前面补0
+        var month = ("0" + (now.getMonth() + 1)).slice(-2);
+//拼装完整日期格式
+        var today = now.getFullYear()+"-"+(month)+"-"+(day) ;
+//完成赋值
+        $('#ipt_stime').val(today);*/
+        $('#post').attr('onclick','post_change(1)')
+    }
+
+    function getListId() {
+        if (flag===1) return;
+        $.ajax({
+            type:"POST",
+            url:"../OperateServlet.do",
+            data:{
+                action:'get_listId'
+            },
+            dataType:'json',
+            success:function (jsonObj) {
+                var datalist_ln =  $('#datalist_ln');
+                var datalist_car =  $('#datalist_car');
+                for (var i=0;i<jsonObj.ln_id_list.length;i++){
+                    datalist_ln.append(
+                        '<option value="'+jsonObj.ln_id_list[i]+'">'
+                    )
+                }
+                for (i=0;i<jsonObj.car_id_list.length;i++){
+                    datalist_car.append(
+                        '<option value="'+jsonObj.car_id_list[i]+'">'
+                    )
+                }
+                flag = 1;
+            }
+        });
+    }
+
+    function modal_clear() {
+        getListId();
+        for (var i=0;i<7;i++){
+            $('#modelOperate .modal-body input:eq('+i+')').val('');
+        }
+        $('#post').attr('onclick','post_change(2)')
+    }
+
+    function get_old_id(event) {
+        var id = $(event).parent().parent().attr('id').toString();
+        old_no = id.substring(id.lastIndexOf('_')+1,id.length+1);
+        //console.log(old_no);
+    }
+
+    function delete_operate(event) {
+        if (confirm("确定删除这条信息吗")) {
+            get_old_id(event);
+            $.ajax({
+                url: "../OperateServlet.do",
+                data: {
+                    action: 'delete_operate',
+                    op_id: old_no
+                },
+                type: "POST",
+                dataType: "json",
+                success: function (jsonObj) {
+                    if (jsonObj === true) {
+                        $('#no_'+old_no).remove();
+                    } else {
+                        alert('信息删除失败')
+                    }
+                }
+            });
+        }
+    }
+
+    function add_operate_tbody(jsonObj) {
+        var data = eval(jsonObj);
+        for(var key in data){ //第一层循环取到各个list
+            var List = data[key];
+            for(var operate in List){ //第二层循环取list中的对象
+                $('#operate_tbody').append(
+                    '   <tr id="no_'+List[operate].opid+'">\n' +
+                    '                <td>'+List[operate].license_number+'</td>\n' +
+                    '                <td>'+List[operate].car_id+'</td>\n' +
+                    '                <td>'+List[operate].goods+'</td>\n' +
+                    '                <td>'+List[operate].destination+'</td>\n' +
+                    '                <td>'+ List[operate].stime+'</td>\n' +
+                    '                <td>'+List[operate].rtime+'</td>\n' +
+                    '                <td>'+List[operate].driving_time+'</td>\n' +
+                    '                <td>' +
+                    '                   <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="modal" data-target="#modelOperate" onclick="modal_add(this)">修改</button>' +
+                    '                   <button type="button" class="btn btn-outline-secondary btn-sm"  onclick="delete_operate(this)">删除</button>\n' +
+                    '               </td>\n' +
+                    '    </tr>'
+                );
+            }
+        }
+    }
+
+    function post_change(type) {
+        var data;
+        if (type===1){ //修改信息操作
+            data = {
+                action:'change_operate',
+                op_id:old_no,
+                License_number:$('#ipt_ln').val(),
+                car_id:$('#ipt_car').val(),
+                goods:$('#ipt_goods').val(),
+                destination:$('#ipt_destination').val(),
+                stime:$('#ipt_stime').val(),
+                rtime:$('#ipt_rtime').val(),
+                driving_time:$('#ipt_time').val()
+            };
+            $.ajax({
+                type:"POST",
+                url:"../OperateServlet.do",
+                data:data,
+                dataType:'json',
+                success:function (jsonObj) {
+                    if (jsonObj===true){
+                        var no_tr = $('#no_'+old_no);
+                        no_tr.children().eq(0).text($('#ipt_ln').val());
+                        no_tr.children().eq(1).text($('#ipt_car').val());
+                        no_tr.children().eq(2).text($('#ipt_goods').val());
+                        no_tr.children().eq(3).text($('#ipt_destination').val());
+                        no_tr.children().eq(4).text($('#ipt_stime').val());
+                        no_tr.children().eq(5).text($('#ipt_rtime').val());
+                        no_tr.children().eq(6).text($('#ipt_time').val());
+                        $('#modelOperateClose').click();
+                    }else {
+                        alert('信息修改失败')
+                    }
+                }
+            });
+        }else if (type===2){ //增添信息操作
+            data = {
+                action:'add_operate',
+                License_number:$('#ipt_ln').val(),
+                car_id:$('#ipt_car').val(),
+                goods:$('#ipt_goods').val(),
+                destination:$('#ipt_destination').val(),
+                stime:$('#ipt_stime').val(),
+                rtime:$('#ipt_rtime').val(),
+                driving_time:$('#ipt_time').val()
+            };
+            $.ajax({
+                type:"POST",
+                url:"../OperateServlet.do",
+                data:data,
+                dataType:'json',
+                success:function (jsonObj) {
+                    if (jsonObj!==0){
+                        $('#operate_tbody').prepend(
+                            '   <tr id="no_'+jsonObj+'">\n' +
+                            '                <td>'+$('#ipt_ln').val()+'</td>\n' +
+                            '                <td>'+$('#ipt_car').val()+'</td>\n' +
+                            '                <td>'+$('#ipt_goods').val()+'</td>\n' +
+                            '                <td>'+$('#ipt_destination').val()+'</td>\n' +
+                            '                <td>'+ $('#ipt_stime').val()+'</td>\n' +
+                            '                <td>'+$('#ipt_rtime').val()+'</td>\n' +
+                            '                <td>'+$('#ipt_time').val()+'</td>\n' +
+                            '                <td>' +
+                            '                   <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="modal" data-target="#modelOperate" onclick="modal_add(this)">修改</button>' +
+                            '                   <button type="button" class="btn btn-outline-secondary btn-sm"  onclick="delete_operate(this)">删除</button>\n' +
+                            '               </td>\n' +
+                            '    </tr>'
+                        );
+                        $('#modelOperateClose').click();
+                    }else {
+                        alert('信息添加失败')
+                    }
+                }
+            });
+        }
+    }
+
+    function search() {
+        var search_input =  $('#search_input').val();
+        if (search_input==='')  return;
+        $.ajax({
+            url: "../OperateServlet.do",
+            data: {
+                action: 'search_operate',
+                car_id: search_input
+            },
+            type: "POST",
+            dataType: "json",
+            success: function (jsonObj) {
+                $('#operate_tbody').empty();
+                add_operate_tbody(jsonObj);
+            }
+        });
+    }
+
+    /*Date.prototype.format = function(format) {
+        /!**　时间格式
+           * format="yyyy-MM-dd hh:mm:ss";　
+           *!/
+        var o = {
+            "M+" : this.getMonth() + 1,
+            "d+" : this.getDate(),
+            "h+" : this.getHours(),
+            "m+" : this.getMinutes(),
+            "s+" : this.getSeconds(),
+            "q+" : Math.floor((this.getMonth() + 3) / 3),
+            "S" : this.getMilliseconds()
+        };
+        if (/(y+)/.test(format)) {
+            format = format.replace(RegExp.$1, (this.getFullYear() + "").substr(4
+                - RegExp.$1.length));
+        }
+        for (var k in o) {
+            if (new RegExp("(" + k + ")").test(format)) {
+                format = format.replace(RegExp.$1, RegExp.$1.length == 1
+                    ? o[k]
+                    : ("00" + o[k]).substr(("" + o[k]).length));
+            }
+        }
+        return format;
+    }*/
+</script>
+</html>

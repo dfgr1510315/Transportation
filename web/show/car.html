@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>车辆信息管理</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/4.7.0/css/font-awesome.css">
+    <link rel="stylesheet" href="CSS/main.css">
+    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/popper.js/1.12.5/umd/popper.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div class="jumbotron">
+    <div class="container">
+        <button type="button" class="btn btn-outline-secondary btn-sm" style="margin-bottom: 20px;" data-toggle="modal" data-target="#modelCar" onclick="modal_clear()">增添车辆信息</button>
+        <div class="input-group mb-3">
+            <label for="search_input"></label>
+            <input id="search_input" type="text" class="form-control" placeholder="输入车辆编号">
+            <div class="input-group-append">
+                <i class="fa fa-search" onclick="search()"></i>
+            </div>
+        </div>
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th>车辆编号</th>
+                <th>车辆类型</th>
+                <th>颜色</th>
+                <th>核载人数</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody id="car_tbody"></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="modelCar">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">车辆信息</h6>
+                <a id="modelCarClose" class="close" data-dismiss="modal">&times;</a>
+            </div>
+            <div class="modal-body">
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" >车辆编号</span>
+                    </div>
+                    <input class="form-control" type="text" id="ipt_id" disabled="disabled">
+                </div>
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" >车辆类型</span>
+                    </div>
+                    <input list="datalist_type" class="form-control" type="text" id="ipt_type" >
+                    <datalist id="datalist_type">
+                        <option value="大型车">
+                        <option value="中型车">
+                        <option value="小型车">
+                    </datalist>
+                </div>
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">颜色</span>
+                    </div>
+                    <input class="form-control" type="text"  id="ipt_color">
+                </div>
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">核载人数</span>
+                    </div>
+                    <input class="form-control" type="text"  id="ipt_max">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="post" type="button" class="btn btn-secondary btn-sm" onclick="">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script type="text/javascript">
+    $(document).ready(function () {
+        get_car();
+    });
+    function get_car() {
+        $.ajax({
+            type:"POST",
+            url:"../CarServlet.do",
+            data:{
+                action:'get_car'
+            },
+            dataType:'json',
+            success:function (jsonObj) {
+                add_car_tbody(jsonObj);
+            }
+        });
+    }
+
+    function modal_add(event) {
+        var car_infor = $(event).parent().parent();
+        for (var i=0;i<4;i++){
+            $('#modelCar .modal-body input:eq('+i+')').val(car_infor.children().eq(i).text());
+        }
+        $('#post').attr('onclick','post_change(1)')
+    }
+
+    function modal_clear() {
+        for (var i=0;i<4;i++){
+            $('#modelCar .modal-body input:eq('+i+')').val('');
+        }
+        $('#post').attr('onclick','post_change(2)')
+    }
+
+    function add_car_tbody(jsonObj) {
+        var data = eval(jsonObj);
+        for(var key in data){ //第一层循环取到各个list
+            var List = data[key];
+            for(var car in List){ //第二层循环取list中的对象
+                $('#car_tbody').append(
+                    '   <tr id="no_'+List[car].car_id+'">\n' +
+                    '                <td>'+List[car].car_id+'</td>\n' +
+                    '                <td>'+List[car].car_type+'</td>\n' +
+                    '                <td>'+List[car].color+'</td>\n' +
+                    '                <td>'+List[car].max_guest+'</td>\n' +
+                    '                <td>' +
+                    '                   <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="modal" data-target="#modelCar" onclick="modal_add(this)">修改</button>' +
+                    '                   <button type="button" class="btn btn-outline-secondary btn-sm"  onclick="delete_car(this)">删除</button>\n' +
+                    '               </td>\n' +
+                    '    </tr>'
+                );
+            }
+        }
+    }
+
+    function search() {
+        var search_input =  $('#search_input').val();
+        if (search_input==='')  return;
+        $.ajax({
+            url: "../CarServlet.do",
+            data: {
+                action: 'search_car',
+                car_id: search_input
+            },
+            type: "POST",
+            dataType: "json",
+            success: function (jsonObj) {
+                $('#car_tbody').empty();
+                add_car_tbody(jsonObj);
+            }
+        });
+    }
+
+    function delete_car(event) {
+        if (confirm("确定删除这个车辆信息吗")) {
+            var car_id = $(event).parent().parent().children().eq(0).text();
+            $.ajax({
+                url: "../CarServlet.do",
+                data: {
+                    action: 'delete_car',
+                    car_id: car_id
+                },
+                type: "POST",
+                dataType: "json",
+                success: function (jsonObj) {
+                    if (jsonObj === true) {
+                        $('#no_'+car_id).remove();
+                    } else {
+                        alert('信息删除失败')
+                    }
+                }
+            });
+        }
+    }
+
+    function post_change(type) {
+        var data;
+        if (type===1){ //修改信息操作
+            data = {
+                action:'change_car',
+                car_id:$('#ipt_id').val(),
+                car_type:$('#ipt_type').val(),
+                color:$('#ipt_color').val(),
+                max_guest:$('#ipt_max').val()
+            };
+            $.ajax({
+                type:"POST",
+                url:"../CarServlet.do",
+                data:data,
+                dataType:'json',
+                success:function (jsonObj) {
+                    if (jsonObj===true){
+                        var ipt_id = $('#ipt_id').val();
+                        var car_id = $('#no_'+ipt_id);
+                        car_id.children().eq(0).text(ipt_id);
+                        car_id.children().eq(1).text($('#ipt_type').val());
+                        car_id.children().eq(2).text($('#ipt_color').val());
+                        car_id.children().eq(3).text($('#ipt_max').val());
+                        $('#modelCarClose').click();
+                    }else {
+                        alert('信息修改失败')
+                    }
+                }
+            });
+        }else if (type===2){ //增添信息操作
+            data = {
+                action:'add_car',
+                car_type:$('#ipt_type').val(),
+                color:$('#ipt_color').val(),
+                max_guest:$('#ipt_max').val()
+            };
+            $.ajax({
+                type:"POST",
+                url:"../CarServlet.do",
+                data:data,
+                dataType:'json',
+                success:function (jsonObj) {
+                    if (jsonObj!==0){
+                        $('#car_tbody').prepend(
+                            '<tr id="no_'+jsonObj+'">\n' +
+                            '       <td>'+jsonObj+'</td>\n' +
+                            '       <td>'+$('#ipt_type').val()+'</td>\n' +
+                            '       <td>'+$('#ipt_color').val()+'</td>\n' +
+                            '       <td>'+$('#ipt_max').val()+'</td>\n' +
+                            '       <td>' +
+                            '           <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="modal" data-target="#modelCar" onclick="modal_add(this)">修改</button>' +
+                            '           <button type="button" class="btn btn-outline-secondary btn-sm"  onclick="delete_car(this)">删除</button>\n' +
+                            '       </td>\n' +
+                            '</tr>'
+                        );
+                        $('#modelCarClose').click();
+                    }else {
+                        alert('信息添加失败')
+                    }
+                }
+            });
+        }
+    }
+</script>
+</html>

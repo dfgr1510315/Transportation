@@ -2,8 +2,8 @@ package daoImpl;
 
 import Druid.DBPoolConnection;
 import com.alibaba.druid.pool.DruidPooledConnection;
-import dao.driverDAO;
-import model.driver;
+import dao.carDAO;
+import model.car;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,11 +12,12 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class dirverDAOImpl implements driverDAO {
+public class carDAOlmpl implements carDAO {
+
     @Override
-    public List getDriver(String SQL){
-        driver d;
-        List<driver> list = new ArrayList<>();
+    public List getCar(String SQL) {
+        car c;
+        List<car> list = new ArrayList<>();
         //String SQL = "select * from driver order by License_number";
         DBPoolConnection dbp = DBPoolConnection.getInstance();
         DruidPooledConnection con =null;
@@ -25,13 +26,12 @@ public class dirverDAOImpl implements driverDAO {
             Statement statement = con.createStatement();
             ResultSet rs = statement.executeQuery(SQL);
             while (rs.next()) {
-                d = new driver();
-                d.setLicense_number(rs.getString("License_number"));
-                d.setName(rs.getString("name"));
-                d.setSex(rs.getString("sex"));
-                d.setBirth_year(rs.getString("birth_year"));
-                d.setDirving_type(rs.getString("driving_type"));
-                list.add(d);
+                c = new car();
+                c.setCar_id(rs.getInt("car_id"));
+                c.setCar_type(rs.getString("car_type"));
+                c.setColor(rs.getString("color"));
+                c.setMax_guest(rs.getInt("max_guest"));
+                list.add(c);
             }
             rs.close();
         } catch (Exception e) {
@@ -48,21 +48,24 @@ public class dirverDAOImpl implements driverDAO {
     }
 
     @Override
-    public boolean addDriver(String License_number, String name, String sex, String birth_year, String driving_type) {
-        String SQL = "insert into driver values(?,?,?,?,?)";
+    public int addCar(String car_type, String color, int max_guest) {
+        String SQL = "insert into car (car_type,color,max_guest)values(?,?,?)";
         DBPoolConnection dbp = DBPoolConnection.getInstance();
         DruidPooledConnection con = null;
         PreparedStatement qsql = null;
-        int state = 0;
+        int car_id = 0;
         try {
             con = dbp.getConnection();
             qsql = con.prepareStatement(SQL);
-            qsql.setString(1, License_number);
-            qsql.setString(2, name);
-            qsql.setString(3, sex);
-            qsql.setString(4, birth_year);
-            qsql.setString(5, driving_type);
-            state = qsql.executeUpdate();
+            qsql.setString(1, car_type);
+            qsql.setString(2, color);
+            qsql.setInt(3, max_guest);
+            qsql.executeUpdate();
+            Statement statement = con.createStatement();
+            ResultSet rs = statement.executeQuery("SELECT LAST_INSERT_ID() car_id");
+            while (rs.next()) {
+                car_id = rs.getInt("car_id");
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }finally {
@@ -79,18 +82,18 @@ public class dirverDAOImpl implements driverDAO {
                     e.printStackTrace();
                 }
         }
-        return state != 0;
+        return car_id;
     }
 
     @Override
-    public List searchDriver(String name) {
-        String SQL = "select * from driver where name like '%"+name+"%' order by License_number";
-        return getDriver(SQL);
+    public List searchCar(int car_id) {
+        String SQL = "select * from car where car_id like '%"+car_id+"%' order by car_id";
+        return getCar(SQL);
     }
 
     @Override
-    public boolean deleteDriver(String License_number) {
-        String SQL = "delete FROM driver WHERE License_number=?";
+    public boolean deleteCar(int car_id) {
+        String SQL = "delete from car where car_id=?";
         DBPoolConnection dbp = DBPoolConnection.getInstance();
         DruidPooledConnection con =null;
         PreparedStatement qsql = null;
@@ -98,7 +101,7 @@ public class dirverDAOImpl implements driverDAO {
         try {
             con = dbp.getConnection();
             qsql = con.prepareStatement(SQL);
-            qsql.setString(1, License_number);
+            qsql.setInt(1, car_id);
             state = qsql.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
@@ -120,8 +123,8 @@ public class dirverDAOImpl implements driverDAO {
     }
 
     @Override
-    public boolean changeDriver(String old_no,String License_number,String name,String sex,String birth_year,String driving_type) {
-        String SQL = "update driver set License_number=?,name=?,sex=?,birth_year=?,driving_type=? where License_number=?";
+    public boolean changeCar(int car_id, String car_type, String color, int max_guest) {
+        String SQL = "update car set car_type=?,color=?,max_guest=? where car_id=?";
         DBPoolConnection dbp = DBPoolConnection.getInstance();
         DruidPooledConnection con = null;
         PreparedStatement qsql = null;
@@ -129,12 +132,10 @@ public class dirverDAOImpl implements driverDAO {
         try {
             con = dbp.getConnection();
             qsql = con.prepareStatement(SQL);
-            qsql.setString(1, License_number);
-            qsql.setString(2, name);
-            qsql.setString(3, sex);
-            qsql.setString(4, birth_year);
-            qsql.setString(5, driving_type);
-            qsql.setString(6, old_no);
+            qsql.setString(1, car_type);
+            qsql.setString(2, color);
+            qsql.setInt(3, max_guest);
+            qsql.setInt(4, car_id);
             state = qsql.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();

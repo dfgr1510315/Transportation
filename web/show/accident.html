@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>事故管理</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/4.7.0/css/font-awesome.css">
+    <link rel="stylesheet" href="CSS/main.css">
+    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/popper.js/1.12.5/umd/popper.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/js/bootstrap.min.js"></script>
+</head>
+<!--<input type="datetime-local" name="user_date" />-->
+<body>
+<div class="jumbotron">
+    <div class="container">
+        <button type="button" class="btn btn-outline-secondary btn-sm" style="margin-bottom: 20px;" data-toggle="modal" data-target="#model_accident" onclick="modal_clear()">增添事故信息</button>
+        <div class="input-group mb-3">
+            <label for="search_input"></label>
+            <input id="search_input" type="text" class="form-control" placeholder="输入车辆编号">
+            <div class="input-group-append">
+                <i class="fa fa-search" onclick="search()"></i>
+            </div>
+        </div>
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th>车号</th>
+                <th>事故时间</th>
+                <th>事故地点</th>
+                <th>事故原因</th>
+                <th>伤亡</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody id="accident_tbody"></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="model_accident">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">事故信息</h6>
+                <a id="model_accidentClose" class="close" data-dismiss="modal">&times;</a>
+            </div>
+            <div class="modal-body">
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" >事故车号</span>
+                    </div>
+                    <input list="datalist_car" class="form-control" type="text" id="ipt_car">
+                    <datalist id="datalist_car"></datalist>
+                </div>
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" >事故时间</span>
+                    </div>
+                    <input class="form-control" type="datetime-local" id="ipt_time">
+                </div>
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" >事故地点</span>
+                    </div>
+                    <input class="form-control" type="text" id="ipt_add">
+                </div>
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" >事故原因</span>
+                    </div>
+                    <input class="form-control" type="text" id="ipt_reason" >
+                </div>
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" >伤亡</span>
+                    </div>
+                    <input class="form-control" type="number" id="ipt_die" >
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="post" type="button" class="btn btn-secondary btn-sm" onclick="">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script type="text/javascript">
+    var aid;
+    var flag = 0;
+    $(document).ready(function () {
+        get_accident();
+    });
+
+    function get_accident() {
+        $.ajax({
+            type:"POST",
+            url:"../AccidentServlet.do",
+            data:{
+                action:'get_accident'
+            },
+            dataType:'json',
+            success:function (jsonObj) {
+                add_accident_tbody(jsonObj);
+            }
+        });
+    }
+
+    function add_accident_tbody(jsonObj) {
+        var data = eval(jsonObj);
+        for(var key in data){ //第一层循环取到各个list
+            var List = data[key];
+            for(var accident in List){ //第二层循环取list中的对象
+                $('#accident_tbody').append(
+                    '   <tr id="no_'+List[accident].aid+'">\n' +
+                    '                <td>'+List[accident].acid+'</td>\n' +
+                    '                <td>'+List[accident].actime+'</td>\n' +
+                    '                <td>'+List[accident].acaddress+'</td>\n' +
+                    '                <td>'+List[accident].acreason+'</td>\n' +
+                    '                <td>'+List[accident].acdie+'</td>\n' +
+                    '                <td>' +
+                    '                   <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="modal" data-target="#model_accident" onclick="modal_add(this)">修改</button>' +
+                    '                   <button type="button" class="btn btn-outline-secondary btn-sm"  onclick="delete_accident(this)">删除</button>\n' +
+                    '               </td>\n' +
+                    '    </tr>'
+                );
+            }
+        }
+    }
+
+    function modal_add(event) {
+        get_aid(event);
+        getListId();
+        var accident_infor = $(event).parent().parent();
+        for (var i=0;i<5;i++){
+            $('#model_accident .modal-body input:eq('+i+')').val(accident_infor.children().eq(i).text());
+        }
+        $('#post').attr('onclick','post_change(1)')
+    }
+
+    function modal_clear() {
+        getListId();
+        for (var i=0;i<5;i++){
+            $('#model_accident .modal-body input:eq('+i+')').val('');
+        }
+        $('#post').attr('onclick','post_change(2)')
+    }
+
+    function delete_accident(event) {
+        if (confirm("确定删除这条信息吗")) {
+            get_aid(event);
+            $.ajax({
+                url: "../AccidentServlet.do",
+                data: {
+                    action: 'delete_accident',
+                    aid: aid
+                },
+                type: "POST",
+                dataType: "json",
+                success: function (jsonObj) {
+                    if (jsonObj === true) {
+                        $(event).parent().parent().remove();
+                    } else {
+                        alert('信息删除失败')
+                    }
+                }
+            });
+        }
+    }
+
+    function getListId() {
+        if (flag===1) return;
+        $.ajax({
+            type:"POST",
+            url:"../AccidentServlet.do",
+            data:{
+                action:'get_listId'
+            },
+            dataType:'json',
+            success:function (jsonObj) {
+                var datalist_car =  $('#datalist_car');
+                for (var i=0;i<jsonObj.car_id_list.length;i++){
+                    datalist_car.append(
+                        '<option value="'+jsonObj.car_id_list[i]+'">'
+                    )
+                }
+                flag = 1;
+            }
+        });
+    }
+
+    function get_aid(event) {
+        var id = $(event).parent().parent().attr('id');
+        aid = id.substring(id.lastIndexOf('_')+1,id.length+1);
+    }
+
+    function post_change(type) {
+        var data;
+        if (type===1){ //修改信息操作
+            data = {
+                action:'change_accident',
+                acid:$('#ipt_car').val(),
+                actime:$('#ipt_time').val(),
+                acaddress:$('#ipt_add').val(),
+                acreason:$('#ipt_reason').val(),
+                acdie:$('#ipt_die').val(),
+                aid:aid
+            };
+            $.ajax({
+                type:"POST",
+                url:"../AccidentServlet.do",
+                data:data,
+                dataType:'json',
+                success:function (jsonObj) {
+                    if (jsonObj===true){
+                        var accident_id = $('#no_'+aid);
+                        accident_id.children().eq(0).text($('#ipt_car').val());
+                        accident_id.children().eq(1).text($('#ipt_time').val());
+                        accident_id.children().eq(2).text($('#ipt_add').val());
+                        accident_id.children().eq(3).text($('#ipt_reason').val());
+                        accident_id.children().eq(4).text($('#ipt_die').val());
+                        $('#model_accidentClose').click();
+                    }else {
+                        alert('信息修改失败')
+                    }
+                }
+            });
+        }else if (type===2){ //增添信息操作
+            data = {
+                action:'add_accident',
+                acid:$('#ipt_car').val(),
+                actime:$('#ipt_time').val(),
+                acaddress:$('#ipt_add').val(),
+                acreason:$('#ipt_reason').val(),
+                acdie:$('#ipt_die').val()
+            };
+            $.ajax({
+                type:"POST",
+                url:"../AccidentServlet.do",
+                data:data,
+                dataType:'json',
+                success:function (jsonObj) {
+                    if (jsonObj!==0){
+                        $('#accident_tbody').prepend(
+                            '   <tr id="no_'+jsonObj+'">\n' +
+                            '                <td>'+$('#ipt_car').val()+'</td>\n' +
+                            '                <td>'+$('#ipt_time').val()+'</td>\n' +
+                            '                <td>'+$('#ipt_add').val()+'</td>\n' +
+                            '                <td>'+$('#ipt_reason').val()+'</td>\n' +
+                            '                <td>'+$('#ipt_die').val()+'</td>\n' +
+                            '                <td>' +
+                            '                   <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="modal" data-target="#model_accident" onclick="modal_add(this)">修改</button>' +
+                            '                   <button type="button" class="btn btn-outline-secondary btn-sm"  onclick="delete_accident(this)">删除</button>\n' +
+                            '               </td>\n' +
+                            '    </tr>'
+                        );
+                        $('#model_accidentClose').click();
+                    }else {
+                        alert('信息添加失败')
+                    }
+                }
+            });
+        }
+    }
+
+    function search() {
+        var search_input =  $('#search_input').val();
+        if (search_input==='')  return;
+        $.ajax({
+            url: "../AccidentServlet.do",
+            data: {
+                action: 'search_accident',
+                acid: search_input
+            },
+            type: "POST",
+            dataType: "json",
+            success: function (jsonObj) {
+                $('#accident_tbody').empty();
+                add_accident_tbody(jsonObj);
+            }
+        });
+    }
+</script>
+</html>

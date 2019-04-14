@@ -1,15 +1,16 @@
 package dao;
 
-import model.driver;
+
+import java.util.List;
 
 public interface driverDAO {
-    driver getDriver();
+    List getDriver(String SQL);
 
-    boolean addDriver(String Licence_number,String name,String sex,String birth_year,String driving_type);
+    boolean addDriver(String License_number,String name,String sex,String birth_year,String driving_type);
 
-    driver searchDriver(String Licence_number);
+    List searchDriver(String name);
 
-    boolean deleteDriver(String Licence_number);
+    boolean deleteDriver(String License_number);
 
-    boolean changeDriver(String Licence_number);
+    boolean changeDriver(String old_no,String License_number,String name,String sex,String birth_year,String driving_type);
 }

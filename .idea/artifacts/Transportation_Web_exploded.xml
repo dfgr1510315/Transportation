@@ -1,0 +1,20 @@
+<component name="ArtifactManager">
+  <artifact type="exploded-war" name="Transportation:Web exploded">
+    <output-path>$PROJECT_DIR$/out/artifacts/Transportation_Web_exploded</output-path>
+    <root id="root">
+      <element id="javaee-facet-resources" facet="Transportation/web/Web" />
+      <element id="directory" name="WEB-INF">
+        <element id="directory" name="classes">
+          <element id="module-output" name="Transportation" />
+        </element>
+        <element id="directory" name="lib">
+          <element id="library" level="project" name="druid-1.1.14" />
+          <element id="library" level="project" name="log4j-1.2.17" />
+          <element id="library" level="project" name="servlet-api" />
+          <element id="library" level="project" name="JSON" />
+          <element id="library" level="project" name="mysql-connector-java-8.0" />
+        </element>
+      </element>
+    </root>
+  </artifact>
+</component>

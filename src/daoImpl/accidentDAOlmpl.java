@@ -2,8 +2,8 @@ package daoImpl;
 
 import Druid.DBPoolConnection;
 import com.alibaba.druid.pool.DruidPooledConnection;
-import dao.driverDAO;
-import model.driver;
+import dao.accidentDAO;
+import model.accident;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,12 +12,12 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class dirverDAOImpl implements driverDAO {
+public class accidentDAOlmpl implements accidentDAO {
+
     @Override
-    public List getDriver(String SQL){
-        driver d;
-        List<driver> list = new ArrayList<>();
-        //String SQL = "select * from driver order by License_number";
+    public List getAccident(String SQL) {
+        accident ac;
+        List<accident> list = new ArrayList<>();
         DBPoolConnection dbp = DBPoolConnection.getInstance();
         DruidPooledConnection con =null;
         try {
@@ -25,13 +25,14 @@ public class dirverDAOImpl implements driverDAO {
             Statement statement = con.createStatement();
             ResultSet rs = statement.executeQuery(SQL);
             while (rs.next()) {
-                d = new driver();
-                d.setLicense_number(rs.getString("License_number"));
-                d.setName(rs.getString("name"));
-                d.setSex(rs.getString("sex"));
-                d.setBirth_year(rs.getString("birth_year"));
-                d.setDirving_type(rs.getString("driving_type"));
-                list.add(d);
+                ac = new accident();
+                ac.setAid(rs.getInt("aid"));
+                ac.setAcid(rs.getInt("acid"));
+                ac.setActime(rs.getString("actime"));
+                ac.setAcaddress(rs.getString("acaddress"));
+                ac.setAcreason(rs.getString("acreason"));
+                ac.setAcdie(rs.getInt("acdie"));
+                list.add(ac);
             }
             rs.close();
         } catch (Exception e) {
@@ -48,21 +49,26 @@ public class dirverDAOImpl implements driverDAO {
     }
 
     @Override
-    public boolean addDriver(String License_number, String name, String sex, String birth_year, String driving_type) {
-        String SQL = "insert into driver values(?,?,?,?,?)";
+    public int addAccident(int acid, String actime, String acaddress, String acreason, int acdie) {
+        String SQL = "insert into accident (acid,actime,acaddress,acreason,acdie)values(?,?,?,?,?)";
         DBPoolConnection dbp = DBPoolConnection.getInstance();
         DruidPooledConnection con = null;
         PreparedStatement qsql = null;
-        int state = 0;
+        int aid = 0;
         try {
             con = dbp.getConnection();
             qsql = con.prepareStatement(SQL);
-            qsql.setString(1, License_number);
-            qsql.setString(2, name);
-            qsql.setString(3, sex);
-            qsql.setString(4, birth_year);
-            qsql.setString(5, driving_type);
-            state = qsql.executeUpdate();
+            qsql.setInt(1, acid);
+            qsql.setString(2, actime);
+            qsql.setString(3, acaddress);
+            qsql.setString(4, acreason);
+            qsql.setInt(5, acdie);
+            qsql.executeUpdate();
+            Statement statement = con.createStatement();
+            ResultSet rs = statement.executeQuery("SELECT LAST_INSERT_ID() aid");
+            while (rs.next()) {
+                aid = rs.getInt("aid");
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }finally {
@@ -79,18 +85,18 @@ public class dirverDAOImpl implements driverDAO {
                     e.printStackTrace();
                 }
         }
-        return state != 0;
+        return aid;
     }
 
     @Override
-    public List searchDriver(String name) {
-        String SQL = "select * from driver where name like '%"+name+"%' order by License_number";
-        return getDriver(SQL);
+    public List searchAccident(int acid) {
+        String SQL = "select * from accident where acid="+acid;
+        return getAccident(SQL);
     }
 
     @Override
-    public boolean deleteDriver(String License_number) {
-        String SQL = "delete FROM driver WHERE License_number=?";
+    public boolean deleteAccident(int aid) {
+        String SQL = "delete FROM accident WHERE aid=?";
         DBPoolConnection dbp = DBPoolConnection.getInstance();
         DruidPooledConnection con =null;
         PreparedStatement qsql = null;
@@ -98,7 +104,7 @@ public class dirverDAOImpl implements driverDAO {
         try {
             con = dbp.getConnection();
             qsql = con.prepareStatement(SQL);
-            qsql.setString(1, License_number);
+            qsql.setInt(1, aid);
             state = qsql.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
@@ -120,8 +126,8 @@ public class dirverDAOImpl implements driverDAO {
     }
 
     @Override
-    public boolean changeDriver(String old_no,String License_number,String name,String sex,String birth_year,String driving_type) {
-        String SQL = "update driver set License_number=?,name=?,sex=?,birth_year=?,driving_type=? where License_number=?";
+    public boolean changeAccident(int acid, String actime, String acaddress, String acreason, int acdie, int aid) {
+        String SQL = "update accident set acid=?,actime=?,acaddress=?,acreason=?,acdie=? where aid=?";
         DBPoolConnection dbp = DBPoolConnection.getInstance();
         DruidPooledConnection con = null;
         PreparedStatement qsql = null;
@@ -129,12 +135,12 @@ public class dirverDAOImpl implements driverDAO {
         try {
             con = dbp.getConnection();
             qsql = con.prepareStatement(SQL);
-            qsql.setString(1, License_number);
-            qsql.setString(2, name);
-            qsql.setString(3, sex);
-            qsql.setString(4, birth_year);
-            qsql.setString(5, driving_type);
-            qsql.setString(6, old_no);
+            qsql.setInt(1, acid);
+            qsql.setString(2, actime);
+            qsql.setString(3, acaddress);
+            qsql.setString(4, acreason);
+            qsql.setInt(5, acdie);
+            qsql.setInt(6, aid);
             state = qsql.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();

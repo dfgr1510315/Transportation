@@ -1,0 +1,27 @@
+.jumbotron{
+    width: 1140px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 20px;
+}
+#search_input {
+    border: none;
+    border-bottom: 1px solid #ced4da;
+    border-radius: 0;
+    font-size: 13px;
+    position: static;
+    padding-right: 21px;
+}
+.input-group .input-group-append {
+    position: absolute;
+    color: #757a7e;
+    top: 8px;
+    right: 3px;
+    cursor: pointer;
+}
+#search_input:focus{
+    outline: none;
+    border-bottom-color: #007bff;
+    box-shadow:none;
+    z-index: 0;
+}

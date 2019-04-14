@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>司机信息管理</title>
+    <link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.staticfile.org/font-awesome/4.7.0/css/font-awesome.css">
+    <link rel="stylesheet" href="CSS/main.css">
+    <script src="https://cdn.staticfile.org/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://cdn.staticfile.org/popper.js/1.12.5/umd/popper.min.js"></script>
+    <script src="https://cdn.staticfile.org/twitter-bootstrap/4.1.0/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+<div class="jumbotron">
+    <div class="container">
+   <!--     <h2>司机信息</h2>
+        <p>增删查改：</p>-->
+        <button type="button" class="btn btn-outline-secondary btn-sm" style="margin-bottom: 20px;" data-toggle="modal" data-target="#changeDriver" onclick="modal_clear()">增添司机信息</button>
+        <div class="input-group mb-3">
+            <label for="search_input"></label>
+            <input id="search_input" type="text" class="form-control" placeholder="输入姓名">
+            <div class="input-group-append">
+                <i class="fa fa-search" onclick="search()"></i>
+            </div>
+        </div>
+        <table class="table table-hover">
+            <thead>
+            <tr>
+                <th>执照号码</th>
+                <th>姓名</th>
+                <th>性别</th>
+                <th>出生年</th>
+                <th>准驾车型</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody id="driver_tbody"></tbody>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="changeDriver">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h6 class="modal-title">司机信息</h6>
+                <a id="changeDriverClose" class="close" data-dismiss="modal">&times;</a>
+            </div>
+            <div class="modal-body">
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">执照编号</span>
+                    </div>
+                    <input class="form-control" type="text" id="ipt_license_number">
+                </div>
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" >姓名</span>
+                    </div>
+                    <input class="form-control" type="text" id="ipt_name">
+                </div>
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" >性别</span>
+                    </div>
+                    <input list="datalist_sex" class="form-control" type="text" id="ipt_sex" >
+                    <datalist id="datalist_sex">
+                        <option value="男">
+                        <option value="女">
+                    </datalist>
+                </div>
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text">出生年</span>
+                    </div>
+                    <input class="form-control" type="text"  id="ipt_birth">
+                </div>
+                <div class="input-group mb-3 input-group-sm">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" >准驾车型</span>
+                    </div>
+                    <input list="datalist_type" class="form-control" type="text" id="ipt_type">
+                    <datalist id="datalist_type">
+                        <option value="A1">
+                        <option value="A2">
+                        <option value="A3">
+                        <option value="B1">
+                        <option value="B2">
+                        <option value="C1">
+                        <option value="C2">
+                        <option value="C3">
+                    </datalist>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="post" type="button" class="btn btn-secondary btn-sm" onclick="">确定</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script type="text/javascript">
+    var old_no;
+    $(document).ready(function () {
+        get_driver();
+    });
+    
+    function search() {
+        var search_input =  $('#search_input').val();
+        if (search_input==='')  return;
+        $.ajax({
+            url: "../DriverServlet",
+            data: {
+                action: 'searchDriver',
+                name: search_input
+            },
+            type: "POST",
+            dataType: "json",
+            success: function (jsonObj) {
+                $('#driver_tbody').empty();
+                add_driver_tbody(jsonObj);
+            }
+        });
+    }
+
+    function add_driver_tbody(jsonObj) {
+        var data = eval(jsonObj);
+        for(var key in data){ //第一层循环取到各个list
+            var List = data[key];
+            for(var driver in List){ //第二层循环取list中的对象
+                $('#driver_tbody').append(
+                    '   <tr id="no_'+List[driver].license_number+'">\n' +
+                    '                <td>'+List[driver].license_number+'</td>\n' +
+                    '                <td>'+List[driver].name+'</td>\n' +
+                    '                <td>'+List[driver].sex+'</td>\n' +
+                    '                <td>'+List[driver].birth_year+'</td>\n' +
+                    '                <td>'+List[driver].dirving_type+'</td>\n' +
+                    '                <td>' +
+                    '                   <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="modal" data-target="#changeDriver" onclick="modal_add(this)">修改</button>' +
+                    '                   <button type="button" class="btn btn-outline-secondary btn-sm"  onclick="delete_driver(this)">删除</button>\n' +
+                    '               </td>\n' +
+                    '    </tr>'
+                );
+            }
+        }
+    }
+
+    function get_driver() {
+        $.ajax({
+            type:"POST",
+            url:"../DriverServlet",
+            data:{
+                action:'get_driver'
+            },
+            dataType:'json',
+            success:function (jsonObj) {
+                add_driver_tbody(jsonObj);
+            }
+        });
+    }
+    
+    function modal_add(event) {
+        var driver_infor = $(event).parent().parent();
+        for (var i=0;i<5;i++){
+            $('#changeDriver .modal-body input:eq('+i+')').val(driver_infor.children().eq(i).text());
+        }
+        old_no = $('#changeDriver .modal-body input:eq(0)').val();
+        $('#post').attr('onclick','post_change(1)')
+    }
+
+    function delete_driver(event) {
+        if (confirm("确定删除这个司机信息吗")) {
+            var license_number = $(event).parent().parent().children().eq(0).text();
+            $.ajax({
+                url: "../DriverServlet",
+                data: {
+                    action: 'delete_driver',
+                    license_number: license_number
+                },
+                type: "POST",
+                dataType: "json",
+                success: function (jsonObj) {
+                    if (jsonObj === true) {
+                        $('#no_'+license_number).remove();
+                    } else {
+                        alert('信息删除失败')
+                    }
+                }
+            });
+        }
+    }
+    
+    function post_change(type) {
+        var data;
+        if (type===1){ //修改信息操作
+            data = {
+                action:'change_driver',
+                old_no:old_no,
+                license_number:$('#ipt_license_number').val(),
+                name:$('#ipt_name').val(),
+                sex:$('#ipt_sex').val(),
+                birth_year:$('#ipt_birth').val(),
+                dirving_type:$('#ipt_type').val()
+            };
+            $.ajax({
+                type:"POST",
+                url:"../DriverServlet",
+                data:data,
+                dataType:'json',
+                success:function (jsonObj) {
+                    if (jsonObj===true){
+                        var no_tr = $('#no_'+old_no);
+                        no_tr.children().eq(0).text($('#ipt_license_number').val());
+                        no_tr.children().eq(1).text($('#ipt_name').val());
+                        no_tr.children().eq(2).text($('#ipt_sex').val());
+                        no_tr.children().eq(3).text($('#ipt_birth').val());
+                        no_tr.children().eq(4).text($('#ipt_type').val());
+                        $('#changeDriverClose').click();
+                    }else {
+                        alert('信息修改失败')
+                    }
+                }
+            });
+        }else if (type===2){ //增添信息操作
+            var ipt_license_number =  $('#ipt_license_number').val();
+            data = {
+                action:'addDriver',
+                license_number:ipt_license_number,
+                name:$('#ipt_name').val(),
+                sex:$('#ipt_sex').val(),
+                birth_year:$('#ipt_birth').val(),
+                dirving_type:$('#ipt_type').val()
+            };
+            $.ajax({
+                type:"POST",
+                url:"../DriverServlet",
+                data:data,
+                dataType:'json',
+                success:function (jsonObj) {
+                    if (jsonObj===true){
+                        $('#driver_tbody').prepend(
+                            '<tr id="no_'+ipt_license_number+'">\n' +
+                            '       <td>'+ipt_license_number+'</td>\n' +
+                            '       <td>'+$('#ipt_name').val()+'</td>\n' +
+                            '       <td>'+$('#ipt_sex').val()+'</td>\n' +
+                            '       <td>'+$('#ipt_birth').val()+'</td>\n' +
+                            '       <td>'+$('#ipt_type').val()+'</td>\n' +
+                            '       <td>' +
+                            '            <button type="button" class="btn btn-outline-secondary btn-sm" data-toggle="modal" data-target="#changeDriver" onclick="modal_add(this)">修改</button>' +
+                            '            <button type="button" class="btn btn-outline-secondary btn-sm"  onclick="delete_driver(this)">删除</button>\n' +
+                            '       </td>\n' +
+                            '</tr>'
+                        );
+                        $('#changeDriverClose').click();
+                    }else {
+                        alert('信息添加失败')
+                    }
+                }
+            });
+        }
+    }
+    
+    function modal_clear() {
+        for (var i=0;i<5;i++){
+            $('#changeDriver .modal-body input:eq('+i+')').val('');
+        }
+        $('#post').attr('onclick','post_change(2)')
+    }
+</script>
+</html>

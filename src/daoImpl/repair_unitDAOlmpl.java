@@ -2,8 +2,8 @@ package daoImpl;
 
 import Druid.DBPoolConnection;
 import com.alibaba.druid.pool.DruidPooledConnection;
-import dao.driverDAO;
-import model.driver;
+import dao.repair_unitDAO;
+import model.repair_unit;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -12,12 +12,12 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-public class dirverDAOImpl implements driverDAO {
+public class repair_unitDAOlmpl implements repair_unitDAO {
+
     @Override
-    public List getDriver(String SQL){
-        driver d;
-        List<driver> list = new ArrayList<>();
-        //String SQL = "select * from driver order by License_number";
+    public List getRepair_unit(String SQL) {
+        repair_unit reu;
+        List<repair_unit> list = new ArrayList<>();
         DBPoolConnection dbp = DBPoolConnection.getInstance();
         DruidPooledConnection con =null;
         try {
@@ -25,13 +25,11 @@ public class dirverDAOImpl implements driverDAO {
             Statement statement = con.createStatement();
             ResultSet rs = statement.executeQuery(SQL);
             while (rs.next()) {
-                d = new driver();
-                d.setLicense_number(rs.getString("License_number"));
-                d.setName(rs.getString("name"));
-                d.setSex(rs.getString("sex"));
-                d.setBirth_year(rs.getString("birth_year"));
-                d.setDirving_type(rs.getString("driving_type"));
-                list.add(d);
+                reu = new repair_unit();
+                reu.setReuname(rs.getString("reuname"));
+                reu.setReutel(rs.getString("reutel"));
+                reu.setReuaddress(rs.getString("reuaddress"));
+                list.add(reu);
             }
             rs.close();
         } catch (Exception e) {
@@ -48,8 +46,8 @@ public class dirverDAOImpl implements driverDAO {
     }
 
     @Override
-    public boolean addDriver(String License_number, String name, String sex, String birth_year, String driving_type) {
-        String SQL = "insert into driver values(?,?,?,?,?)";
+    public boolean addRepair_unit(String reuname, String reutel, String reuaddress) {
+        String SQL = "insert into repair_unit values(?,?,?)";
         DBPoolConnection dbp = DBPoolConnection.getInstance();
         DruidPooledConnection con = null;
         PreparedStatement qsql = null;
@@ -57,11 +55,9 @@ public class dirverDAOImpl implements driverDAO {
         try {
             con = dbp.getConnection();
             qsql = con.prepareStatement(SQL);
-            qsql.setString(1, License_number);
-            qsql.setString(2, name);
-            qsql.setString(3, sex);
-            qsql.setString(4, birth_year);
-            qsql.setString(5, driving_type);
+            qsql.setString(1, reuname);
+            qsql.setString(2, reutel);
+            qsql.setString(3, reuaddress);
             state = qsql.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
@@ -79,18 +75,18 @@ public class dirverDAOImpl implements driverDAO {
                     e.printStackTrace();
                 }
         }
-        return state != 0;
+        return state!=0;
     }
 
     @Override
-    public List searchDriver(String name) {
-        String SQL = "select * from driver where name like '%"+name+"%' order by License_number";
-        return getDriver(SQL);
+    public List searchRepair_unit(String reuname) {
+        String SQL = "select * from repair_unit where reuname like '%"+reuname+"%'";
+        return getRepair_unit(SQL);
     }
 
     @Override
-    public boolean deleteDriver(String License_number) {
-        String SQL = "delete FROM driver WHERE License_number=?";
+    public boolean deleteRepair_unit(String reuname) {
+        String SQL = "delete FROM repair_unit WHERE reuname=?";
         DBPoolConnection dbp = DBPoolConnection.getInstance();
         DruidPooledConnection con =null;
         PreparedStatement qsql = null;
@@ -98,7 +94,7 @@ public class dirverDAOImpl implements driverDAO {
         try {
             con = dbp.getConnection();
             qsql = con.prepareStatement(SQL);
-            qsql.setString(1, License_number);
+            qsql.setString(1, reuname);
             state = qsql.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
@@ -120,8 +116,8 @@ public class dirverDAOImpl implements driverDAO {
     }
 
     @Override
-    public boolean changeDriver(String old_no,String License_number,String name,String sex,String birth_year,String driving_type) {
-        String SQL = "update driver set License_number=?,name=?,sex=?,birth_year=?,driving_type=? where License_number=?";
+    public boolean changeRepair_unit(String reuname, String reutel, String reuaddress, String oldname) {
+        String SQL = "update repair_unit set reuname=?,reutel=?,reuaddress=? where reuname=?";
         DBPoolConnection dbp = DBPoolConnection.getInstance();
         DruidPooledConnection con = null;
         PreparedStatement qsql = null;
@@ -129,12 +125,10 @@ public class dirverDAOImpl implements driverDAO {
         try {
             con = dbp.getConnection();
             qsql = con.prepareStatement(SQL);
-            qsql.setString(1, License_number);
-            qsql.setString(2, name);
-            qsql.setString(3, sex);
-            qsql.setString(4, birth_year);
-            qsql.setString(5, driving_type);
-            qsql.setString(6, old_no);
+            qsql.setString(1, reuname);
+            qsql.setString(2, reutel);
+            qsql.setString(3, reuaddress);
+            qsql.setString(4, oldname);
             state = qsql.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
